@@ -12,6 +12,5 @@ document.addEventListener('DOMContentLoaded', () => {
 	game.init();
 
 	window.requestAnimationFrame(() => game.run());
-
 });
 
