@@ -1,33 +1,21 @@
-import physicsHandler from './physics.js';
-
-var MODE = 'edit';
-
 class EntityHandler {
-	constructor() {
+	constructor(physics) {
 		this.entities = [];
 		this.maxEntities = 1000;
 		this.currentID = 1001;
 		this.numEntities = 0;
+		this.physics = physics;
 	}
 
 	init() {
-		for (let entity in this.entities) {
-			entity.alive = true;
+		for (let entity of this.entities) {
 
-			/*
-			 * If the editor is being used, the physics engine requires a
-			 * physics object to be assigned to each object, this allows it to
-			 * be selected.
-			 */
-			entity.bodyDef.type = (MODE === 'edit') ? 'dynamic'
-				: entity.settings.physics_type;
+			entity.alive = true;
+			entity.bodyDef.type = entity.settings.physics_type;
 
 			// Create a new physics body and attach it to the entity.
-			if (entity.settings.hasPhysics || MODE === 'edit') {
-				let newPhysics = physicsHandler.addBody(
-						entity.bodyDef, entity.id);
-
-				entity.physics = newPhysics;
+			if (entity.settings.hasPhysics) {
+				entity.physics = this.physics.addBody(entity.bodyDef, entity.id);
 			} else { // or set it as a scenery object without physics.
 				entity.physics = false;
 			}
@@ -36,7 +24,7 @@ class EntityHandler {
 			 * Finally look for any components attached to the object and
 			 * initialise as necessary.
 			 */
-			for (let component in entity.components) {
+			for (let component of entity.components) {
 				if (typeof component.init !== 'undefined') {
 					component.init({
 						physics: entity.physics,
@@ -52,12 +40,10 @@ class EntityHandler {
 	}
 
 	update() {
-		for (let entity in this.entities) {
-			let physics = entity.phyiscs;
-
+		for (let entity of this.entities) {
 			if (entity.alive === false) continue;
 
-			for (let component in entity) {
+			for (let component of entity.components) {
 				if (typeof component.update === 'undefined' || entity.alive) continue;
 
 				if (component.update(physics, entity.settings).remove) {
@@ -66,16 +52,16 @@ class EntityHandler {
 			}
 
 			// Sets an easily accessible position variable for the entity.
-			if (physics) {
-				entity.pos.x |= physics.body.GetPosition().x;
-				entity.pos.y |= physics.body.GetPosition().y;
-				entity.angle |= physics.body.GetAngle();
+			if (entity.physics) {
+				entity.pos.x = entity.physics.body.GetPosition().x;
+				entity.pos.y = entity.physics.body.GetPosition().y;
+				entity.angle = entity.physics.body.GetAngle();
 			}
 		}
 	}
 
 	render(context) {
-		for (let entity in this.entites) {
+		for (let entity of this.entities) {
 			let bodyDef = entity.bodyDef;
 
 			if (entity.alive === false) continue;
@@ -83,27 +69,21 @@ class EntityHandler {
 			context.save();
 			context.translate(entity.pos.x, entity.pos.y);
 			context.rotate(entity.angle);
-			conext.beginPath();
-			context.fillStyle = currentEntity.settings.color;
+			context.beginPath();
+			context.fillStyle = entity.settings.color;
 
 			if (entity.settings.color === 'circle') {
-
-				let hackyFix = (MODE === "edit") ? 0 : 0.5;
-
-				context.arc(0, 0, bodyDef.radius - hackyFix, 0, 2 * Math.PI, false);
-			} else {
-				context.fillRect(-bodyDef.width/2, -bodyDef.height/2, bodyDef.width, bodyDef.height);
-		}
+				context.arc(0, 0, bodyDef.radius, 0, 2 * Math.PI, false);
+			} else
+				context.fillRect(-bodyDef.width / 2, -bodyDef.height / 2, bodyDef.width, bodyDef.height);
 
 			if (entity.settings.color) {
 				switch(bodyDef.shape){
 					case "rect": {
-						context.fillRect(-bodyDef.width/2, -bodyDef.height/2, bodyDef.width, bodyDef.height);
+						context.fillRect(-bodyDef.width, -bodyDef.height, bodyDef.width, bodyDef.height);
 					} break;
 					case "circle": {
-						var hackyFix = (MODE === "edit") ? 0 : 0.5;
-
-						context.arc(0, 0, bodyDef.radius - hackyFix, 0, 2 * Math.PI, false);
+						context.arc(0, 0, bodyDef.radius, 0, 2 * Math.PI, false);
 					}
 				}
 			}
@@ -113,9 +93,11 @@ class EntityHandler {
 			context.fill();
 			context.stroke();
 
-			for (let component in entity) {
+			for (let component of entity.components) {
 				if (typeof component.update === 'undefined') continue;
 			}
+
+			context.restore();
 		}
 	}
 
@@ -123,7 +105,7 @@ class EntityHandler {
 		this.entities.push(entity);
 	}
 
-	remoteEntity(entity) {
+	removeEntity(entity) {
 		let index = this.entities.indexOf(entity);
 
 		if(index < 0)
@@ -166,14 +148,14 @@ class Entity {
 			title: this.id.name,
 			id: this.id.id,
 			hasPhysics: true,
-			scape: 1,
+			scale: 1,
 			physics_type: this.bodyDef.type,
 			drawType: 'colour',
 			color: shape.color || '#FF00FF',
 			image: false,
 			componentNames: shape.componentNames || []
 		};
-		this.isAlive = true;
+		this.alive = true;
 		this.angle = 0;
 	}
 
@@ -182,4 +164,4 @@ class Entity {
 	}
 }
 
-export {EntityHandler as default}
+export { EntityHandler, Entity }

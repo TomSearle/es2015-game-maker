@@ -5,8 +5,8 @@ import Game from './game.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
-	const	canvas = document.getElementById('game-canvas'),
-			game = new Game(canvas, true);
+	const canvas = document.getElementById('game-canvas'),
+	      game = new Game(canvas, true);
 
 	game.init();
 

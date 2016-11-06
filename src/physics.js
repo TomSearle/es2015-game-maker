@@ -14,8 +14,10 @@ var b2AABB = Box2D.Collision.b2AABB;
 var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
 var b2MouseJointDef = Box2D.Dynamics.Joints.b2MouseJointDef;
 
+var DEBUG = false;
+
 class Body {
-	constructor(id, details) {
+	constructor(id, details, physicsHandler) {
 		this.details = details;
 
 		// Convert canvas positions to box2d positions.
@@ -40,7 +42,7 @@ class Body {
 		}[details.type || 'dynamic'];
 
 		// Create body
-		this.body = this.physics.world.CreateBody(this.definition);
+		this.body = physicsHandler.world.CreateBody(this.definition);
 
 		this.fixtureDef = this.createFixture();
 
@@ -50,17 +52,14 @@ class Body {
 	createFixture() {
 		let fixtureDef = new b2FixtureDef();
 
-		fixtureDef = Object.assign(fixtureDef, {
-			density: 2,
-			friction: 1,
-			restitution: 0.2,
-			isSensor: false
-		});
-
+		fixtureDef.density = 2;
+		fixtureDef.friction = 1;
+		fixtureDef.restitution = 0.2;
+		fixtureDef.isSensor = false;
 		fixtureDef.userData = this;
 
 		fixtureDef.shape = new b2PolygonShape();
-		fixtureDef.SetAsBox((this.details.width || 2 / 2),
+		fixtureDef.shape.SetAsBox((this.details.width || 2) / 2,
 			(this.details.height || 2) / 2);
 
 		return fixtureDef;
@@ -112,7 +111,7 @@ class PhysicsHandler {
 		this.gravity = new b2Vec2(0, 9.8);
 		this.world = world || new b2World(this.gravity, true);
 		this.context = element.getContext('2d');
-		this.scale = 1;
+		this.scale = 10;
 		this.dtRemaining = 0;
 		this.stepAmount = 1 / 60;
 		this.seletedBody = null;
@@ -122,12 +121,14 @@ class PhysicsHandler {
 		let debugDraw = new b2DebugDraw();
 
 		debugDraw.SetSprite(this.context);
-		debugDraw.SetDrawScale(this.scale);
-		debugDraw.SetFillAplpha(0.3);
+		debugDraw.SetDrawScale(1);
+		debugDraw.SetFillAlpha(0.3);
 		debugDraw.SetLineThickness(0.1);
 		debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
 
-		this.world.SetDebugDraw(this.debugDraw);
+		console.log("value");
+
+		this.world.SetDebugDraw(debugDraw);
 	}
 
 	step(dt) {
@@ -135,8 +136,8 @@ class PhysicsHandler {
 		while (this.dtRemaining > this.stepAmount) {
 			this.dtRemaining -= this.stepAmount;
 			this.world.Step(this.stepAmount,
-					10,  // Velocity iterations
-					10); // position iterations
+					5,  // Velocity iterations
+					5); // position iterations
 		}
 	}
 
@@ -149,9 +150,9 @@ class PhysicsHandler {
 	}
 
 	render() {
-		if (this.debug) {
-			this.world.DrawDebugData();
-		}
+		if (DEBUG === true) this.world.DrawDebugData();
+
+		this.world.ClearForces();
 	}
 
 	getBodyAtMouse() {
@@ -181,15 +182,15 @@ class PhysicsHandler {
 	}
 
 	addPolyBody(details, id) {
-		return new PolyBody(id, details);
+		return new PolyBody(id, details, this);
 	}
 
 	addCircleBody(details, id) {
-		return new CircleBody(id, details);
+		return new CircleBody(id, details, this);
 	}
 
 	addBody(details, id) {
-		return new Body(id, details);
+		return new Body(id, details, this);
 	}
 
 	destroyBody(body) {
