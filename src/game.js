@@ -1,5 +1,5 @@
-import PhysicsHandler from './physics.js';
 import EntityHandler from './entities.js';
+import PhysicsHandler from './physics.js';
 
 class Game {
 
@@ -15,7 +15,7 @@ class Game {
 	}
 
 	init() {
-		//this.loadLevel();
+		// this.loadLevel();
 		this.running = true;
 	}
 
@@ -63,4 +63,4 @@ class Game {
 	}
 }
 
-export {Game as default};
+export { Game as default };

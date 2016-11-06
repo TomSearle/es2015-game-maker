@@ -176,6 +176,7 @@ class PhysicsHandler {
 
 			return true;
 		}, aabb);
+
 		return this.selectedBody;
 	}
 
@@ -193,6 +194,8 @@ class PhysicsHandler {
 
 	destroyBody(body) {
 		if (this.world && body) this.world.DestroyBody(body);
+			return;
 	}
 }
-export {PhysicsHandler as default};
+
+export { PhysicsHandler as default };
